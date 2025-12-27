@@ -10,6 +10,7 @@ Build a redis-backed job queue from scratch to understand distributed systems co
 - [x] Add Redis connection
 - [x] Job submission endpoint
 - [x] Job status tracking
+- [x] Locust integration and Load testing (1 gunicorn worker and 20/100 users)
 - [ ] Single worker implementation
 - [ ] Job consumption
 - [ ] Job status transitions
