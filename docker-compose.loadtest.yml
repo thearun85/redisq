@@ -1,0 +1,12 @@
+services:
+  loadtest:
+    build: ./loadtests
+    ports:
+      - "8089:8089"
+    command: ["-f", "locustfile.py"]
+    environment:
+      - LOCUST_HOST=http://host.docker.internal:5000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./results:/results
