@@ -5,16 +5,49 @@ Flask API with Redis queue operations (RPUSH, HSET, INCR).
 
 ### 1 Worker
 
-| Users | Requests/s | Peak | Median | P95  | P99  | Failures |
+| Users | Requests/s | Median | P95  | P99  | Failures |
 |-------|-----------|------|--------|------|------|----------|
-| 20    | ~54       | 67   | 5ms    | 9ms  | 11ms | 0 (0%)   |
-| 100   | ~120      | 197  | 3ms    | 10ms | 14ms | 0 (0%)   |
+| 20    | ~54       | 5ms  | 9ms  | 11ms | 0 (0%)   |
+| 100   | ~120      | 3ms  | 10ms | 14ms | 0 (0%)   |
+| 200   | ~112      | 3ms  | 16ms | 20ms | 0 (0%)   |
+
+### 4 Workers
+
+| Users | Requests/s | Median | P95  | P99  | Failures |
+|-------|-----------|--------|------|------|----------|
+| 20    | ~55       | 5ms    | 9ms  | 13ms | 0 (0%)   |
+| 100   | ~155      | 3ms    | 10ms | 15ms | 0 (0%)   |
+| 200   | ~112      | 3ms    | 16ms | 20ms | 0 (0%)   |
+
+| Users | Metric     | 1 Worker | 4 Workers | Improvement |
+|-------|------------|----------|-----------|-------------|
+| 20    | Requests/s | 54       | 55        | +2% |
+| 20    | Median     | 5ms      | 5ms       | — |
+| 20    | P99        | 11ms     | 13ms      | -18% slower |
+| 20    | Failures   | 0        | 0         | ✓ |
+| 100   | Requests/s | 120      | 155       | **+29%** |
+| 100   | Median     | 3ms      | 3ms       | — |
+| 100   | P99        | 14ms     | 15ms      | -7% slower |
+| 100   | Failures   | 0        | 0         | ✓ |
+| 200   | Requests/s | 112      | 112       | **0%** |
+| 200   | Median     | 3ms      | 3ms       | — |
+| 200   | P99        | 20ms     | 20ms      | — |
+| 200   | Failures   | 0        | 0         | ✓ |
 
 ### Observations: 1 Worker
-- **Throughput ceiling**: ~120 req/s sustained, ~197 req/s burst
-- **Efficiency degradation**: 2.69 req/s per user (20 users) → 1.20 req/s per user (100 users)
-- **Latency paradox**: Median latency improves under load (5ms → 3ms) due to connection pooling
-- **Perfect reliability**: Zero failures at all load levels
+- **Throughput ceiling**: ~120 req/s at 100 users
+- **Degradation at 200**: Peak 270 → sustained 112 req/s
+- **Latency stable**: Median 3ms across all loads
+- **Perfect reliability**: Zero failures
+
+### Observations: 4 Workers
+- **Optimal at 100 users**: 155 req/s sustained, 227 peak
+- **No benefit at extremes**: Same as 1 worker at 20 and 200 users
+- **I/O bound at 200**: Identical 270 → 112 req/s degradation
+- **Perfect reliability**: Zero failures
+
+### Critical Finding
+At 200 users, both 1 and 4 workers deliver identical performance (112 req/s), proving the bottleneck is I/O operations, not worker capacity.
 
 ### Bottleneck Analysis
 - **1 Worker**: CPU-bound by Python GIL at ~120 req/s
@@ -28,9 +61,9 @@ Flask API with Redis queue operations (RPUSH, HSET, INCR).
 ### Test Configuration
 - **Load pattern**: 67% POST /jobs, 19% GET /jobs/[id], 13% GET /stats, 1% GET /health
 - **User wait time**: between(0.01, 0.05) seconds
-- **Test duration**: 30 seconds per test
+- **Test duration**: 60 seconds per test
 - **Environment**: Docker containers (Redis + Flask + Gunicorn)
 
 ### Raw Data
-- [20 Users, 1 Worker](results/v0.1/test20_stats.csv)
-- [100 Users, 1 Worker](results/v0.1/test100_stats.csv)
+- [1 Worker Tests](results/v0.1)
+- [4 Worker Tests](results/v0.2)
