@@ -12,5 +12,8 @@ def create_app():
         
     from api.health import health_bp
     flask_app.register_blueprint(health_bp)
+
+    from api.job import job_bp
+    flask_app.register_blueprint(job_bp)
     
     return flask_app

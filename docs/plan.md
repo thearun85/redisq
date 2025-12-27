@@ -8,7 +8,7 @@ Build a redis-backed job queue from scratch to understand distributed systems co
 - [x] Architecture diagram, readme and plan
 - [x] Basic Flask health endpoint
 - [x] Add Redis connection
-- [ ] Job submission endpoint
+- [x] Job submission endpoint
 - [ ] Job status tracking
 - [ ] Single worker implementation
 - [ ] Job consumption
