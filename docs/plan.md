@@ -15,7 +15,7 @@ Build a redis-backed job queue from scratch to understand distributed systems co
 ## Version 0.2 - Optimization (more workers and pipelining)
 
 - [x] 4 gunicorn workers (synchronous)
-- [ ] redis pipelining
+- [x] redis pipelining
 
 ## Version 0.3 - Worker Logic and job transitions
 

@@ -19,6 +19,16 @@ Flask API with Redis queue operations (RPUSH, HSET, INCR).
 | 100   | ~155      | 3ms    | 10ms | 15ms | 0 (0%)   |
 | 200   | ~112      | 3ms    | 16ms | 20ms | 0 (0%)   |
 
+### 4 Workers + Redis Pipelining
+
+| Users | Requests/s | Median | P95  | P99  | Failures |
+|-------|-----------|--------|------|------|----------|
+| 20    | ~41       | 5ms    | 10ms | 17ms | 0 (0%)   |
+| 100   | ~121      | 3ms    | 10ms | 16ms | 0 (0%)   |
+| 200   | **~198**  | 3ms    | 16ms | 20ms | 0 (0%)   |
+
+### Comparison: 1 worker versus 4 workers
+
 | Users | Metric     | 1 Worker | 4 Workers | Improvement |
 |-------|------------|----------|-----------|-------------|
 | 20    | Requests/s | 54       | 55        | +2% |
@@ -33,6 +43,20 @@ Flask API with Redis queue operations (RPUSH, HSET, INCR).
 | 200   | Median     | 3ms      | 3ms       | — |
 | 200   | P99        | 20ms     | 20ms      | — |
 | 200   | Failures   | 0        | 0         | ✓ |
+
+### Comparison: Impact of Redis Pipelining (4 Workers)
+
+| Users | Metric     | Without Pipelining | With Pipelining | Change |
+|-------|------------|--------------------|-----------------|---------|
+| 20    | Requests/s | 55                 | 41              | **-25%** |
+| 20    | Median     | 5ms                | 5ms             | — |
+| 20    | P99        | 13ms               | 17ms            | -31% slower |
+| 100   | Requests/s | 155                | 121             | **-22%** |
+| 100   | Median     | 3ms                | 3ms             | — |
+| 100   | P99        | 15ms               | 16ms            | -7% slower |
+| 200   | Requests/s | 112                | **198**         | **+77%** ✅ |
+| 200   | Median     | 3ms                | 3ms             | — |
+| 200   | P99        | 20ms               | 20ms            | — |
 
 ### Observations: 1 Worker
 - **Throughput ceiling**: ~120 req/s at 100 users
@@ -53,10 +77,8 @@ At 200 users, both 1 and 4 workers deliver identical performance (112 req/s), pr
 - **1 Worker**: CPU-bound by Python GIL at ~120 req/s
 - **Redis operations**: 3 per request (RPUSH, HSET, INCR) - pipelining would reduce to 1
 
-### Next Steps
-1. **Redis pipelining**: Batch 3 operations → 1 round trip (est. +30% throughput)
-2. **Connection pooling**: Reuse Redis connections (est. +10% throughput)  
-3. **Async workers**: Use gevent for I/O concurrency (est. 2-3x throughput)
+### Key Finding
+Redis pipelining successfully addresses the I/O bottleneck at high concurrency (200 users), achieving **198 req/s** compared to 112 req/s without pipelining. However, it introduces overhead that reduces performance at lower concurrency levels.
 
 ### Test Configuration
 - **Load pattern**: 67% POST /jobs, 19% GET /jobs/[id], 13% GET /stats, 1% GET /health

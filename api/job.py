@@ -20,16 +20,19 @@ def submit_job():
     }
     try:
         r = get_redis()
-        
-        r.rpush('job_queue', json.dumps(job))
 
-        r.hset(f"Job:{job['id']}", mapping={
+        pipe = r.pipeline()
+        
+        pipe.rpush('job_queue', json.dumps(job))
+
+        pipe.hset(f"Job:{job['id']}", mapping={
             'data': json.dumps(job),
             'status': 'pending'
         })
 
-        r.incr('metrics:jobs_submitted')
-
+        pipe.incr('metrics:jobs_submitted')
+        pipe.execute()
+        
         return jsonify({
             "id": job['id'],
             "status": "pending",
